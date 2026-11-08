@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GitVerse Academy</title>
+<style>
+:root{--bg:#0b1020;--card:#141b34;--bd:#232c52;--tx:#e8ecff;--mu:#9aa6d6;--ac:#7c6cff;--ok:#34d399;--er:#f87171}
+@media(prefers-color-scheme:light){:root{--bg:#f4f6ff;--card:#fff;--bd:#d9def5;--tx:#141a38;--mu:#5a648f}}
+*{box-sizing:border-box}body{margin:0;font:17px/1.6 system-ui,Segoe UI,sans-serif;background:var(--bg);color:var(--tx);display:flex;min-height:100vh}
+nav{width:220px;background:var(--card);border-right:1px solid var(--bd);padding:16px 10px;position:sticky;top:0;height:100vh;overflow:auto}
+nav h1{font-size:19px;margin:0 8px 14px}nav button{display:block;width:100%;text-align:left;background:none;border:0;color:var(--tx);padding:10px 12px;border-radius:10px;font-size:16px;cursor:pointer}
+nav button:hover,nav button.on{background:var(--ac);color:#fff}
+main{flex:1;padding:24px;max-width:960px;margin:auto;width:100%}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:18px;margin:0 0 14px}
+h2{margin:.2em 0 .5em}h3{margin:.4em 0}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.btn{background:var(--ac);color:#fff;border:0;border-radius:10px;padding:10px 16px;font-size:16px;cursor:pointer}
+.btn.alt{background:transparent;border:1px solid var(--bd);color:var(--tx)}
+pre,code{font-family:Consolas,monospace}pre{background:#080c1a;color:#d6defc;padding:12px;border-radius:10px;overflow:auto;font-size:14.5px;margin:8px 0}
+.bar{height:10px;background:var(--bd);border-radius:9px;overflow:hidden}.bar i{display:block;height:100%;background:var(--ac)}
+.mu{color:var(--mu)}.ok{color:var(--ok)}.er{color:var(--er)}.tag{font-size:13px;background:var(--bd);padding:2px 9px;border-radius:99px}
+input{background:var(--bg);color:var(--tx);border:1px solid var(--bd);border-radius:10px;padding:10px;font:16px Consolas,monospace;width:100%}
+.opt{display:block;width:100%;text-align:left;margin:6px 0}
+#term{background:#080c1a;color:#d6defc;border-radius:12px;padding:12px;height:300px;overflow:auto;font:14.5px Consolas,monospace;white-space:pre-wrap}
+#toast{position:fixed;bottom:18px;right:18px;background:var(--ok);color:#012;padding:10px 16px;border-radius:10px;display:none;font-weight:600}
+@media(max-width:760px){body{flex-direction:column}nav{width:100%;height:auto;position:static;display:flex;overflow:auto;padding:8px}nav h1{display:none}nav button{white-space:nowrap;width:auto}main{padding:14px}}
+</style></head><body>
+<nav id="nav"><h1>🚀 GitVerse</h1></nav><main id="app"></main><div id="toast"></div>
+<script>
+const $=s=>document.querySelector(s),esc=s=>String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+let P;try{P=JSON.parse(localStorage.gv)}catch(e){}P=Object.assign({xp:0,done:[],qbest:0,cmds:0,games:0,days:[],ms:[],notes:{}},P||{});
+const save=()=>{try{localStorage.gv=JSON.stringify(P)}catch(e){}},today=()=>new Date().toISOString().slice(0,10);
+function xp(n,m){P.xp+=n;if(!P.days.includes(today()))P.days.push(today());save();toast('+'+n+' XP '+(m||''))}
+function toast(t){const e=$('#toast');e.textContent=t;e.style.display='block';clearTimeout(e.t);e.t=setTimeout(()=>e.style.display='none',1800)}
+const ranks=[[0,'🥉 Git Beginner'],[100,'🥈 Commit Master'],[250,'🥇 Branch Expert'],[450,'🏆 Merge Champion'],[700,'⚡ Actions Pro'],[1000,'👑 GitVerse Professional']];
+const rank=()=>ranks.filter(r=>P.xp>=r[0]).pop()[1];
+function streak(){let s=0,d=new Date();while(P.days.includes(d.toISOString().slice(0,10))){s++;d.setDate(d.getDate()-1)}return s}
+
+/* ---------- CONTENT ---------- */
+const CH=[
+{t:'What is Git?',lv:'Beginner',a:'Git = a time machine for your project. Every commit is a saved checkpoint you can return to.',
+ p:['Version control tracks changes to files over time.','Git is distributed: every developer has the full history on their own computer.','Git (tool, on your PC) is not GitHub (website that hosts Git repositories).','Three places: Working Directory → Staging Area → Local Repository.'],
+ d:'Working Dir --git add--> Staging --git commit--> Repository --git push--> GitHub',
+ c:[['git --version','Check Git is installed'],['git init','Make the current folder a repository'],['git status','See what changed']],m:'Running git commands outside a repository: "fatal: not a git repository". Run git init first.'},
+{t:'Setup & Configuration',lv:'Beginner',a:'Config is like writing your name on every checkpoint, so teammates know who made it.',
+ p:['Install Git for Windows from git-scm.com (includes Git Bash).','Set name and email once with --global.','The hidden .git folder IS your repository. Never delete it.','SSH keys let you push without typing a password every time.'],
+ d:'~/.gitconfig (global)  →  .git/config (this repo only)',
+ c:[['git config --global user.name "Nikesh"','Set your name'],['git config --global user.email "you@mail.com"','Set your email (use your GitHub email)'],['git config --list','Show all settings']],m:'Commit shows wrong author because email was never configured.'},
+{t:'Commit Cycle',lv:'Beginner',a:'Commit = saving a checkpoint in a video game. Add = choosing what goes into the save.',
+ p:['git add moves changes to the staging area.','git commit saves staged changes permanently with a message.','Write messages like: "Add login page", not "changes".','git diff shows unstaged changes; git diff --staged shows staged ones.'],
+ d:'edit file → git add → git commit -m "msg" → git log',
+ c:[['git add .','Stage all changes'],['git commit -m "Add homepage"','Save checkpoint'],['git log --oneline','Short history'],['git restore file.txt','Discard unstaged changes (careful!)']],m:'Forgetting git add, then wondering why commit says "nothing to commit".'},
+{t:'Branching',lv:'Beginner',a:'Branch = a separate road to build a feature without disturbing the main road.',
+ p:['main is the default branch (older repos use master).','HEAD points to the branch/commit you are on now.','Create a branch per feature or bugfix.','Detached HEAD = you are looking at an old commit, not a branch.'],
+ d:'main:    A---B---C\n              \\\n feature:  D---E',
+ c:[['git branch','List branches'],['git switch -c feature-login','Create and switch'],['git switch main','Go back'],['git branch -d feature-login','Delete merged branch']],m:'Committing on main by mistake instead of a feature branch.'},
+{t:'Merge & Rebase',lv:'Intermediate',a:'Merge = joining two roads. Rebase = moving your road to start from the latest point of the main road.',
+ p:['Fast-forward: main had no new commits, Git just moves the pointer.','Three-way merge: both branches changed, Git creates a merge commit.','Conflict: both edited the same lines. Edit the file, remove <<<<<<< ======= >>>>>>> markers, then add and commit.','Never rebase commits that are already pushed and shared.'],
+ d:'merge:  A-B-C-----M\n         \\   /\n          D-E\nrebase: A-B-C-D\'-E\'',
+ c:[['git merge feature-login','Merge into current branch'],['git merge --abort','Cancel a conflicted merge'],['git rebase main','Replay your commits on top of main']],m:'Leaving conflict markers in the file and committing.'},
+{t:'GitHub & Remotes',lv:'Intermediate',a:'GitHub = Google Drive for Git repositories, with teamwork tools on top.',
+ p:['origin is the default name of your remote.','push uploads commits, fetch downloads without merging, pull = fetch + merge.','If push is rejected, pull first, then push again.','Add .gitignore (node_modules, .env) and a README.md to every repo.'],
+ d:'Local repo <--push/pull--> origin (GitHub)',
+ c:[['git remote add origin https://github.com/USER/REPO.git','Connect remote'],['git push -u origin main','First push and set upstream'],['git pull','Get latest changes'],['git fetch','Download only']],m:'Pushing .env with passwords. Add it to .gitignore BEFORE the first commit.'},
+{t:'Pull Requests & Teamwork',lv:'Intermediate',a:'A Pull Request says: "My road is ready, please check it before joining the main road."',
+ p:['Fork = your own copy on GitHub; clone = copy to your computer.','Flow: fork → clone → branch → commit → push → open PR → review → merge.','upstream = original repo you forked from; origin = your fork.','Use Issues to track tasks and bugs.'],
+ d:'Fork → Branch → Commit → Push → Pull Request → Review → Merge',
+ c:[['git remote add upstream https://github.com/OWNER/REPO.git','Track original repo'],['git fetch upstream','Get latest from original'],['gh pr create','Open PR with GitHub CLI']],m:'Making a PR from your main branch instead of a feature branch.'},
+{t:'GitHub Actions',lv:'Advanced',a:'GitHub Actions = a robot that runs your tests and deploys automatically whenever you push.',
+ p:['Workflow = YAML file in .github/workflows/.','Trigger (on) → Job → Steps. Each job runs on a runner (ubuntu-latest).','uses: runs a ready-made action; run: runs a shell command.','Store passwords in Settings → Secrets, use ${{ secrets.NAME }}. Never in YAML.','Check marketplace for the latest action versions before using.'],
+ d:'push → Runner starts → checkout → install → test → build',
+ c:[['mkdir -p .github/workflows','Create workflows folder'],['git add .github && git commit -m "Add CI"','Commit workflow']],
+ y:'name: CI\non:\n  push:\n    branches: [main]\n  pull_request:\njobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: 22\n      - run: npm ci\n      - run: npm test\n      - run: npm run build',m:'Wrong YAML indentation (use spaces, never tabs).'},
+{t:'CI/CD & Advanced Git',lv:'Advanced',a:'CI/CD = automatic quality check (CI) and automatic delivery (CD) on every change.',
+ p:['CI: build and test on every push. CD: deploy after tests pass.','stash saves unfinished work temporarily.','reset moves history (⚠ --hard deletes changes); revert makes a new undo commit (safe for shared branches).','reflog lists where HEAD has been, so you can recover "lost" commits.','Use Conventional Commits: feat:, fix:, docs:.'],
+ d:'Code → Build → Test → Deploy → Monitor → (Rollback)',
+ c:[['git stash','Hide changes temporarily'],['git stash pop','Bring them back'],['git revert HEAD','Safely undo last commit'],['git reflog','Find lost commits'],['git reset --hard HEAD~1','⚠ DESTRUCTIVE: deletes last commit and changes']],m:'Using reset --hard on shared branches. Use revert instead.'}];
+const Q=[
+['What does "git init" do?',['Creates a new repository','Uploads to GitHub','Installs Git','Deletes history'],0,'It creates the hidden .git folder, turning a folder into a repo.'],
+['Which area holds changes ready for the next commit?',['Working directory','Staging area','Remote','Stash'],1,'git add puts changes in the staging area.'],
+['Git and GitHub are the same thing.',['True','False'],1,'Git is the tool; GitHub is a hosting website.'],
+['Which command creates AND switches to a new branch?',['git branch -d x','git switch -c x','git merge x','git clone x'],1,'switch -c = create + switch.'],
+['git pull equals...',['fetch + merge','push + commit','add + commit','clone + init'],0,'pull downloads and merges.'],
+['A merge conflict happens when...',['Branches edit the same lines','You forget git add','Internet is slow','You use main'],0,'Git cannot decide which version to keep.'],
+['Safest way to undo a commit already pushed to a shared branch?',['git reset --hard','git revert','delete .git','git clean'],1,'revert adds a new commit and keeps history intact.'],
+['Where do workflow files live?',['.github/workflows/','src/actions/','.git/hooks/','workflows.txt'],0,'GitHub only reads workflows from .github/workflows/.'],
+['In Actions, "uses: actions/checkout@v4" does what?',['Downloads your repo code onto the runner','Deploys the site','Installs Node','Runs tests'],0,'Checkout copies your repository to the runner.'],
+['Where should API keys for workflows be stored?',['In the YAML','In README','GitHub Secrets','In a commit message'],2,'Secrets are encrypted and hidden from logs.'],
+['origin usually refers to...',['Your remote repository','Original author','Your branch','A tag'],0,'origin is the default remote name.'],
+['Which file keeps node_modules out of Git?',['.gitignore','README.md','LICENSE','package.json'],0,'List patterns in .gitignore.']];
+const G=[['Create a new repository',['git init','git start','git new','git create'],0],['Save staged changes',['git save','git commit -m "msg"','git push','git stage'],1],['Stage all changes',['git add .','git put .','git commit .','git track'],0],['See short history',['git log --oneline','git list','git history','git show all'],0],['Make and switch to branch dev',['git branch dev','git switch -c dev','git new dev','git merge dev'],1],['Upload commits to GitHub',['git pull','git fetch','git push','git send'],2],['Download changes without merging',['git fetch','git pull','git clone','git get'],0],['Safely undo last commit (shared branch)',['git reset --hard','git revert HEAD','git clean -f','git rm'],1],['Connect to remote origin',['git remote add origin URL','git origin URL','git connect URL','git link URL'],0],['Temporarily hide changes',['git hide','git stash','git cache','git pause'],1]];
+const REF=[['Setup','git config --global user.name "N"','Set your name','git config --global user.name "Nikesh"'],['Setup','git --version','Show version','git version 2.x'],['Repository','git init','New repo','Initialized empty Git repository'],['Repository','git clone URL','Copy remote repo','git clone https://github.com/u/r.git'],['Tracking','git status','Show state','On branch main ...'],['Tracking','git add .','Stage everything','git add .'],['Tracking','git restore --staged f','Unstage file','git restore --staged a.txt'],['Commit','git commit -m "msg"','Save checkpoint','[main 1a2b3c4] msg'],['Commit','git commit --amend','Edit last commit (unpushed only)','git commit --amend -m "new msg"'],['History','git log --oneline --graph --all','Visual history','* 1a2b3c4 msg'],['History','git diff','Unstaged changes','git diff'],['History','git blame f','Who changed each line','git blame app.js'],['Branching','git switch -c x','Create+switch','Switched to a new branch \'x\''],['Branching','git branch -d x','Delete merged branch','Deleted branch x'],['Merging','git merge x','Merge x into current','Fast-forward'],['Merging','git rebase main','Replay on main','Successfully rebased'],['Remote','git remote -v','List remotes','origin  URL (fetch)'],['Remote','git push -u origin main','Push + set upstream','branch main set up to track origin/main'],['Remote','git pull','Fetch + merge','Already up to date.'],['Undo','git revert HEAD','Safe undo','[main abc] Revert "msg"'],['Undo','git reset --hard HEAD~1','⚠ Deletes last commit & changes','HEAD is now at ...'],['Undo','git reflog','Recover lost commits','HEAD@{0}: commit: msg'],['Advanced','git stash / git stash pop','Shelve work','Saved working directory'],['Advanced','git cherry-pick <id>','Copy one commit','git cherry-pick 1a2b3c4'],['Advanced','git tag -a v1.0 -m "msg"','Release tag','git tag -a v1.0 -m "First"'],['GitHub CLI','gh repo create','Create repo from terminal','gh repo create my-app --public'],['GitHub CLI','gh pr create','Open PR','gh pr create --fill'],['Actions','.github/workflows/ci.yml','Workflow file location','on: push → jobs → steps']];
+
+/* ---------- GIT SIMULATOR ---------- */
+let R=null,hist=[],hi=0;try{R=JSON.parse(localStorage.gvrepo||'null')}catch(e){}
+const sv=()=>{try{localStorage.gvrepo=JSON.stringify(R)}catch(e){}};
+const hid=()=>{let s='';for(let i=0;i<7;i++)s+='0123456789abcdef'[Math.random()*16|0];return s};
+const headC=()=>R.br[R.head],files=c=>c?R.c[c].f:{};
+function anc(a,b){const seen=new Set,st=[b];while(st.length){const x=st.pop();if(!x||seen.has(x))continue;if(x==a)return true;seen.add(x);R.c[x].p.forEach(p=>st.push(p))}return false}
+function stat(){const h=files(headC()),u=[],m=[],s=[];for(const f in R.w){if(f in R.i&&R.i[f]!==h[f])s.push(f);if(!(f in h)&&!(f in R.i))u.push(f);else if(h[f]!==undefined&&R.w[f]!==h[f]&&!(f in R.i))m.push(f);else if(f in R.i&&R.w[f]!==R.i[f])m.push(f)}for(const f in R.i)if(!(f in R.w)&&!s.includes(f))s.push(f);return{u,m,s}}
+function run(line){const t=(line.match(/"[^"]*"|'[^']*'|\S+/g)||[]).map(x=>x.replace(/^["']|["']$/g,''));if(!t.length)return'';
+ const c=t[0];
+ if(c=='help')return'Helpers: touch FILE | echo text > FILE | ls | cat FILE\nGit: init, status, add, commit -m, log [--oneline], branch [name], switch [-c] name, checkout [-b] name, merge name, remote add origin URL, remote -v, push [-u origin main], reset (simulator: restart)\nType "reset-lab" to wipe the practice repo.';
+ if(c=='reset-lab'){R=null;sv();return'Practice repo cleared.'}
+ if(c=='clear')return'\0';
+ if(!R&&!(c=='git'&&t[1]=='init')&&!['git'].includes(c)&&!['touch','echo','ls','cat'].includes(c))return'bash: '+c+': command not found (try "help")';
+ if(['touch','echo','ls','cat'].includes(c)){if(!R)return'fatal: run "git init" first (simulator keeps files inside the repo).';
+  if(c=='touch'){t.slice(1).forEach(f=>{if(!(f in R.w))R.w[f]=''});sv();return''}
+  if(c=='echo'){const k=t.indexOf('>');if(k<0)return t.slice(1).join(' ');R.w[t[k+1]]=t.slice(1,k).join(' ');sv();return''}
+  if(c=='ls')return Object.keys(R.w).join('  ')||'(empty)';
+  if(c=='cat')return t[1] in R.w?R.w[t[1]]:'cat: '+t[1]+': No such file';}
+ if(c!='git')return'bash: '+c+': command not found (try "help")';
+ const s=t[1],a=t.slice(2);
+ if(s=='--version')return'git version 2.47.0 (simulator)';
+ if(s=='init'){if(R)return'Reinitialized existing Git repository';R={w:{},i:{},c:{},br:{main:null},head:'main',rem:null,pushed:{},n:0};sv();return'Initialized empty Git repository in .git/'}
+ if(!R)return'fatal: not a git repository (or any of the parent directories): .git';
+ if(s=='status'){const x=stat();let o='On branch '+R.head+(headC()?'':'\n\nNo commits yet');if(x.s.length)o+='\n\nChanges to be committed:\n'+x.s.map(f=>'\tnew/modified: '+f).join('\n');if(x.m.length)o+='\n\nChanges not staged for commit:\n'+x.m.map(f=>'\tmodified: '+f).join('\n');if(x.u.length)o+='\n\nUntracked files:\n'+x.u.map(f=>'\t'+f).join('\n');if(!x.s.length&&!x.m.length&&!x.u.length)o+='\nnothing to commit, working tree clean';return o}
+ if(s=='add'){if(!a.length)return'Nothing specified, nothing added.';const x=stat();const all=[...x.u,...x.m];for(const f of(a[0]=='.'||a[0]=='-A'?all:a)){if(!(f in R.w))return'fatal: pathspec \''+f+'\' did not match any files';R.i[f]=R.w[f]}sv();return''}
+ if(s=='commit'){const k=a.indexOf('-m');if(k<0)return'Aborting commit due to empty commit message. Use: git commit -m "message"';if(!Object.keys(R.i).length)return'nothing added to commit (use "git add")';const id=hid(),h=headC();R.c[id]={m:a[k+1],p:h?[h]:[],f:Object.assign({},files(h),R.i)};R.br[R.head]=id;const n=Object.keys(R.i).length;R.i={};sv();return'['+R.head+' '+id+'] '+a[k+1]+'\n '+n+' file(s) changed'}
+ if(s=='log'){let x=headC();if(!x)return'fatal: your current branch \''+R.head+'\' does not have any commits yet';const o=[];const seen=new Set;const st=[x];while(st.length){const y=st.shift();if(seen.has(y))continue;seen.add(y);const k=R.c[y];o.push(a.includes('--oneline')?y+' '+k.m:'commit '+y+'\n    '+k.m+'\n');k.p.forEach(p=>st.push(p))}return o.join('\n')}
+ if(s=='branch'){if(!a.length)return Object.keys(R.br).map(b=>(b==R.head?'* ':'  ')+b).join('\n');if(a[0]=='-d'||a[0]=='-D'){if(a[1]==R.head)return'error: cannot delete the checked-out branch';delete R.br[a[1]];sv();return'Deleted branch '+a[1]}if(!headC())return'fatal: no commits yet';R.br[a[0]]=headC();sv();return''}
+ if(s=='switch'||s=='checkout'){const mk=a[0]=='-c'||a[0]=='-b',n=mk?a[1]:a[0];if(!n)return'usage: git switch [-c] <branch>';if(mk){if(n in R.br)return'fatal: a branch named \''+n+'\' already exists';R.br[n]=headC();R.head=n;sv();return'Switched to a new branch \''+n+'\''}
+  if(!(n in R.br))return'fatal: invalid reference: '+n;const x=stat();if(x.m.length||x.s.length)return'error: your local changes would be overwritten. Commit them first.';const old=files(headC());for(const f in old)if(!x.u.includes(f))delete R.w[f];R.head=n;Object.assign(R.w,files(headC()));sv();return'Switched to branch \''+n+'\''}
+ if(s=='merge'){const n=a[0];if(!(n in R.br))return'merge: '+n+' - not something we can merge';const me=headC(),o=R.br[n];if(!o||anc(o,me))return'Already up to date.';const x=stat();if(x.m.length||x.s.length)return'error: commit your changes before merging.';
+  if(!me||anc(me,o)){R.br[R.head]=o;Object.assign(R.w,files(o));sv();return'Updating '+(me||'').slice(0,7)+'..'+o.slice(0,7)+'\nFast-forward'}
+  const fa=files(me),fb=files(o),conf=Object.keys(fb).filter(f=>f in fa&&fa[f]!==fb[f]);if(conf.length)return'Auto-merging '+conf[0]+'\nCONFLICT (content): Merge conflict in '+conf[0]+'\nAutomatic merge failed. (Simulator: conflict resolution is practised in the Challenges tab; nothing was changed.)';
+  const id=hid();R.c[id]={m:"Merge branch '"+n+"'",p:[me,o],f:Object.assign({},fa,fb)};R.br[R.head]=id;Object.assign(R.w,R.c[id].f);sv();return'Merge made by the \'ort\' strategy.'}
+ if(s=='remote'){if(a[0]=='add'){if(R.rem)return'error: remote origin already exists.';R.rem=a[2];sv();return''}if(a[0]=='-v')return R.rem?'origin\t'+R.rem+' (fetch)\norigin\t'+R.rem+' (push)':'';return R.rem?'origin':''}
+ if(s=='push'){if(!R.rem)return'fatal: No configured push destination.\nAdd one: git remote add origin <url>';if(!headC())return'error: src refspec does not match any';R.pushed[R.head]=headC();sv();return'Enumerating objects...\nTo '+R.rem+'\n * '+R.head+' -> '+R.head+(a.includes('-u')?'\nbranch \''+R.head+'\' set up to track \'origin/'+R.head+'\'.':'')}
+ if(s=='reset'&&a.includes('--hard'))return'⚠ Warning: reset --hard deletes work. Not supported in the simulator; type "reset-lab" to restart instead.';
+ return'git: \''+s+'\' is not supported in the simulator yet. Type "help". Real Git supports it on your PC!';}
+const MS=[['Create a repository (git init)',()=>R],['Make your first commit',()=>R&&Object.keys(R.c).length>0],['Create a branch and commit on it',()=>R&&Object.keys(R.br).some(b=>b!='main'&&R.br[b]&&R.br[b]!=R.br.main||(b!='main'&&R.br[b]&&R.c[R.br[b]]&&Object.keys(R.c).length>1))],['Merge a branch into main',()=>R&&Object.values(R.c).some(c=>c.p.length==2||c.m.startsWith("Merge"))||(R&&Object.keys(R.br).length>1&&R.head=='main'&&Object.keys(R.br).some(b=>b!='main'&&R.br[b]==R.br.main&&Object.keys(R.c).length>1))],['Add a remote and push',()=>R&&R.rem&&Object.keys(R.pushed).length>0]];
+
+/* ---------- VIEWS ---------- */
+const V={};let cur='dash';
+const NAV=[['dash','🏠 Dashboard'],['learn','📚 Learn'],['cmds','⌨️ Commands'],['term','💻 Terminal Lab'],['games','🎮 Games'],['quiz','📝 Quiz'],['prog','🏆 Progress']];
+$('#nav').innerHTML+=NAV.map(n=>`<button data-v="${n[0]}">${n[1]}</button>`).join('');
+$('#nav').onclick=e=>{if(e.target.dataset.v)show(e.target.dataset.v)};
+function show(v,a){cur=v;document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.v==v));$('#app').innerHTML=V[v](a);window.scrollTo(0,0);(V[v+'Init']||(()=>0))(a)}
+const copy=t=>{navigator.clipboard&&navigator.clipboard.writeText(t);toast('Copied')};
+V.dash=()=>{const pct=Math.round(P.done.length/CH.length*100),nx=CH.findIndex((c,i)=>!P.done.includes(i));
+return`<h2>Welcome, learner 👋</h2><p class="mu">Learn Git, GitHub and GitHub Actions by doing. Simple English, real commands.</p>
+<div class="grid"><div class="card"><h3>${rank()}</h3><b>${P.xp} XP</b></div><div class="card"><h3>🔥 Streak</h3><b>${streak()} day(s)</b></div><div class="card"><h3>Chapters</h3><b>${P.done.length}/${CH.length}</b></div><div class="card"><h3>Terminal</h3><b>${P.cmds} commands run</b></div></div>
+<div class="card"><b>Course progress ${pct}%</b><div class="bar"><i style="width:${pct}%"></i></div><br>${nx<0?'🎉 All chapters complete! Try the Games and Quiz.':`<button class="btn" onclick="show('learn',${nx})">Continue: ${CH[nx].t}</button>`}</div>
+<div class="card"><h3>Quick start</h3><button class="btn alt" onclick="show('term')">Open Terminal Lab</button> <button class="btn alt" onclick="show('games')">Play Command Master</button> <button class="btn alt" onclick="show('quiz')">Take Quiz</button></div>`};
+V.learn=i=>{if(i===undefined)return`<h2>Learning Path</h2>`+CH.map((c,k)=>`<div class="card"><span class="tag">${c.lv}</span> ${P.done.includes(k)?'<span class="ok">✔ done</span>':''}<h3>Chapter ${k+1}: ${c.t}</h3><button class="btn" onclick="show('learn',${k})">Open</button></div>`).join('');
+const c=CH[i];return`<button class="btn alt" onclick="show('learn')">← All chapters</button><h2>Chapter ${i+1}: ${c.t}</h2><span class="tag">${c.lv}</span>
+<div class="card"><h3>💡 Simple idea</h3>${c.a}</div><div class="card"><h3>Key points</h3><ul>${c.p.map(x=>`<li>${x}</li>`).join('')}</ul></div>
+<div class="card"><h3>Diagram</h3><pre>${esc(c.d)}</pre></div>
+<div class="card"><h3>Commands</h3>${c.c.map(x=>`<pre>${esc(x[0])}</pre><div class="mu" style="margin:-4px 0 8px">${esc(x[1])} <a href="#" onclick="copy('${x[0].replace(/'/g,"\\'").replace(/"/g,'&quot;')}');return false">📋 copy</a></div>`).join('')}${c.y?`<h3>Example workflow (.github/workflows/ci.yml)</h3><pre>${esc(c.y)}</pre><p class="mu">on = when it runs · jobs = work units · runs-on = machine · steps = tasks in order.</p>`:''}</div>
+<div class="card"><h3>⚠ Common mistake</h3>${c.m}</div>
+<div class="card"><h3>✍️ My notes</h3><textarea id="note" style="width:100%;height:80px;background:var(--bg);color:var(--tx);border:1px solid var(--bd);border-radius:10px;padding:8px" oninput="P.notes[${i}]=this.value;save()">${esc(P.notes[i]||'')}</textarea></div>
+<button class="btn" onclick="done(${i})">${P.done.includes(i)?'Completed ✔':'Mark chapter complete (+30 XP)'}</button> <button class="btn alt" onclick="show('term')">Practice in Terminal</button>`};
+function done(i){if(!P.done.includes(i)){P.done.push(i);xp(30,'Chapter complete');}show('learn',i)}
+V.cmds=()=>`<h2>Command Library</h2><input id="q" placeholder="Search commands…" oninput="fc()"><div id="cl"></div>`;
+V.cmdsInit=()=>fc();
+function fc(){const q=($('#q').value||'').toLowerCase();$('#cl').innerHTML=REF.filter(r=>r.join(' ').toLowerCase().includes(q)).map(r=>`<div class="card"><span class="tag">${r[0]}</span><pre>${esc(r[1])}</pre>${r[2]}<br><span class="mu">Example/output: ${esc(r[3])}</span><br><button class="btn alt" onclick="copy(${esc(JSON.stringify(r[1]))}.replace(/&lt;/g,'<').replace(/&gt;/g,'>'))">Copy</button></div>`).join('')||'<p class="mu">No matches.</p>'}
+V.term=()=>`<h2>Terminal Lab</h2><p class="mu">A safe Git simulator that tracks real repository state. It never runs anything on your computer. Type <code>help</code>.</p>
+<div id="term"></div><div style="display:flex;gap:8px;margin:8px 0"><input id="ti" placeholder='git init' autocomplete="off" autocapitalize="off"><button class="btn" id="tb">Run</button></div>
+<div class="card"><h3>Missions</h3><div id="ms"></div></div>
+<div class="card"><h3>Real practice (your own PowerShell / Git Bash)</h3><pre>mkdir practice; cd practice
+git init
+echo "Hello" > a.txt
+git add . ; git commit -m "First commit"
+git switch -c feature
+git log --oneline --graph --all</pre><p class="mu">⚠ Be careful with <code>reset --hard</code>, <code>clean -f</code> and <code>push --force</code>.</p></div>`;
+V.termInit=()=>{const t=$('#term');t.textContent='GitVerse simulator ready. Try: git init\n';const go=()=>{const i=$('#ti'),l=i.value.trim();if(!l)return;hist.push(l);hi=hist.length;i.value='';const o=run(l);if(o=='\0')t.textContent='';else t.textContent+='$ '+l+'\n'+(o?o+'\n':'');t.scrollTop=1e9;P.cmds++;save();chk()};$('#tb').onclick=go;$('#ti').onkeydown=e=>{if(e.key=='Enter')go();if(e.key=='ArrowUp'&&hist.length){hi=Math.max(0,hi-1);e.target.value=hist[hi]}};chk(1)};
+function chk(q){let h='';MS.forEach((m,i)=>{let ok=false;try{ok=!!m[1]()}catch(e){}if(ok&&!P.ms.includes(i)){P.ms.push(i);if(!q)xp(25,'Mission '+(i+1))}h+=`<div>${P.ms.includes(i)?'✅':'⬜'} ${m[0]}</div>`});$('#ms').innerHTML=h;save()}
+let gi=0,gs=0;V.games=()=>{if(gi>=G.length){const r=`<h2>🎮 Command Master</h2><div class="card"><h3>Finished! Score ${gs}/${G.length}</h3><button class="btn" onclick="gi=0;gs=0;show('games')">Play again</button></div>`;return r}
+const g=G[gi];return`<h2>🎮 Command Master</h2><p class="mu">Round ${gi+1}/${G.length} · Score ${gs}</p><div class="card"><h3>${g[0]}</h3>${g[1].map((o,k)=>`<button class="btn alt opt" onclick="ga(${k})"><code>${esc(o)}</code></button>`).join('')}</div>`};
+function ga(k){const g=G[gi];if(k==g[2]){gs++;xp(5)}else toast('Correct: '+g[1][g[2]]);gi++;if(gi>=G.length){P.games++;if(gs>=8)xp(20,'Great run!')}setTimeout(()=>show('games'),700)}
+let qi=0,qs=0,qd=0;V.quiz=()=>{if(qi>=Q.length){const best=Math.max(P.qbest,qs);P.qbest=best;save();return`<h2>📝 Quiz</h2><div class="card"><h3>Score: ${qs}/${Q.length}</h3><p>Best: ${best}/${Q.length}</p><button class="btn" onclick="qi=0;qs=0;qd=0;show('quiz')">Retake</button></div>`}
+const q=Q[qi];return`<h2>📝 Quiz</h2><p class="mu">Question ${qi+1}/${Q.length}</p><div class="card"><h3>${q[0]}</h3>${q[1].map((o,k)=>`<button class="btn alt opt" onclick="qa(${k})">${esc(o)}</button>`).join('')}<div id="fb"></div></div>`};
+function qa(k){if(qd)return;qd=1;const q=Q[qi],ok=k==q[2];if(ok){qs++;xp(5)}$('#fb').innerHTML=`<p class="${ok?'ok':'er'}"><b>${ok?'Correct!':'Not quite. Answer: '+esc(q[1][q[2]])}</b><br>${q[3]}</p><button class="btn" onclick="qi++;qd=0;if(qi>=Q.length&&qs>=9)xp(30,'Quiz ace');show('quiz')">${qi==Q.length-1?'Finish':'Next'}</button>`}
+V.prog=()=>{const B=[['🥉 Git Beginner',P.done.length>=1],['🥈 Commit Master',P.cmds>=10],['🥇 Branch Expert',P.ms.length>=3],['🏆 Merge Champion',P.ms.length>=4],['⚡ Actions Pro',P.done.includes(7)],['🚀 CI/CD Engineer',P.done.includes(8)],['🌟 Quiz Star',P.qbest>=9],['👑 GitVerse Professional',P.xp>=1000]];
+return`<h2>Progress & Achievements</h2><div class="grid"><div class="card"><b>${rank()}</b><br>${P.xp} XP</div><div class="card">Quiz best: ${P.qbest}/${Q.length}</div><div class="card">Games played: ${P.games}</div></div><div class="card"><h3>Badges</h3>${B.map(b=>`<div>${b[1]?'🔓':'🔒'} ${b[0]}</div>`).join('')}</div><button class="btn alt" onclick="if(confirm('Reset ALL progress?')){localStorage.removeItem('gv');localStorage.removeItem('gvrepo');location.reload()}">Reset progress</button>`};
+show('dash');
+</script></body></html>
